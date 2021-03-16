@@ -1,30 +1,130 @@
 from dataclasses import dataclass
-from typing import Optional, TypeVar, Generic
+from typing import Optional, TypeVar, Generic, Any
 from datetime import datetime
-from enum import Enum
 from types import SimpleNamespace
 
 from ossapi.mod import Mod
-
-class ProfilePage(Enum):
-    ME = "me"
-    RECENT_ACTIVITY = "recent_activity"
-    BEATMAPS = "beatmaps"
-    HISTORICAL = "historical"
-    KUDOSU = "kudosu"
-    TOP_RANKS = "top_ranks"
-    MEDALS = "medals"
-
+from ossapi.enums import (Country, Cover, ProfilePage, UserAccountHistory,
+    UserBadge, ProfileBanner, UserGroup, GameMode, RankStatus, Failtimes,
+    Covers, Statistics, Availability, Hype, Nominations)
 
 T = TypeVar("T")
 
 
+"""
+a type hint of ``Optional[Any]`` or ``Any`` means that I don't know what type it
+is, not that the api actually lets any type be returned there.
+"""
 
 @dataclass
-class Beatmap:
-    difficulty_rating: int
+class UserCompact:
+    """
+    https://osu.ppy.sh/docs/index.html#usercompact
+    """
+    # required fields
+    # ---------------
+    avatar_url: str
+    country_code: str
+    default_group: str
     id: int
-    mode: str
+    is_active: bool
+    is_bot: bool
+    is_deleted: bool
+    is_online: bool
+    is_supporter: bool
+    last_visit: bool
+    pm_friends_only: bool
+    profile_colour: str
+    username: str
+
+    # optional fields
+    # ---------------
+    account_history: Optional[list[UserAccountHistory]]
+    active_tournament_banner: Optional[ProfileBanner]
+    badges: Optional[list[UserBadge]]
+    beatmap_playcounts_count: Optional[int]
+    blocks: Optional[Any]
+    country: Optional[Country]
+    cover: Optional[Cover]
+    favourite_beatmapset_count: Optional[int]
+    follower_count: Optional[int]
+    friends: Optional[Any]
+    graveyard_beatmapset_count: Optional[int]
+    groups: Optional[list[UserGroup]]
+    is_admin: Optional[bool]
+    is_bng: Optional[bool]
+    is_full_bn: Optional[bool]
+    is_gmt: Optional[bool]
+    is_limited_bn: Optional[bool]
+    is_moderator: Optional[bool]
+    is_nat: Optional[bool]
+    is_restricted: Optional[bool]
+    is_silenced: Optional[bool]
+    loved_beatmapset_count: Optional[int]
+    monthly_playcounts: Optional[list[None]]
+    page: Optional[Any]
+    previous_usernames: Optional[Any]
+    ranked_and_approved_beatmapset_count: Optional[Any]
+    replays_watched_counts: Optional[Any]
+    scores_best_count: Optional[int]
+    scores_first_count: Optional[int]
+    scores_recent_count: Optional[int]
+    statistics: Optional[Any]
+    statistics_rulesets: Optional[Any]
+    support_level: Optional[Any]
+    unranked_beatmapset_count: Optional[Any]
+    unread_pm_count: Optional[Any]
+    user_achievements: Optional[Any]
+    user_preferences: Optional[Any]
+    rank_history: Optional[Any]
+
+
+@dataclass
+class User(UserCompact):
+    cover_url: str
+    discord: Optional[str]
+    has_supported: bool
+    interests: Optional[str]
+    join_date: datetime
+    kudosu: Any
+    location: Optional[str]
+    max_blocks: int
+    max_friends: int
+    occupation: Optional[str]
+    playmode: str
+    playstyle: list[str]
+    post_count: int
+    profile_order: list[ProfilePage]
+    title: Optional[str]
+    twitter: Optional[str]
+    website: Optional[str]
+
+
+
+@dataclass
+class BeatmapCompact:
+    # required fields
+    # ---------------
+    difficulty_rating: float
+    id: int
+    mode: GameMode
+    status: RankStatus
+    total_length: int
+    version: str
+
+    # optional fields
+    # ---------------
+    # ``BeatmapCompact`` and ``BeatmapsetCompact`` are mutually dependent, so
+    # set a dummy type here and we'll update it to the real type after
+    # ``BeatmapsetCompact`` is defined.
+    beatmapset: Optional[Any] # Optional[BeatmapsetCompact]
+    checksum: Optional[str]
+    failtimes: Optional[Failtimes]
+    max_combo: Optional[int]
+
+
+@dataclass
+class Beatmap(BeatmapCompact):
     status: str
     total_length: int
     version: str
@@ -48,17 +148,24 @@ class Beatmap:
     ranked: int
     url: str
 
+    # overridden fields
+    # -----------------
+    beatmapset: Optional[Any] # Optional[Beatmapset]
+
+
 @dataclass
-class Beatmapset:
+class BeatmapsetCompact:
+    """
+    https://osu.ppy.sh/docs/index.html#beatmapsetcompact
+    """
+    # required fields
+    # ---------------
     artist: str
     artist_unicode: str
-    covers: dict[str, str]
+    covers: Covers
     creator: str
     favourite_count: int
-    # TODO figure out type
-    hype: int
     id: int
-    nsfw: bool
     play_count: int
     preview_url: str
     source: str
@@ -66,106 +173,50 @@ class Beatmapset:
     title: str
     title_unicode: str
     user_id: int
-    video: bool
-    availability: dict[str, Optional[bool]]
+    video: str
+
+    # optional fields
+    # ---------------
+    beatmaps: Optional[list[Beatmap]]
+    converts: Optional[Any]
+    current_user_attributes: Optional[Any]
+    description: Optional[Any]
+    discussions: Optional[Any]
+    events: Optional[Any]
+    genre: Optional[Any]
+    has_favourited: Optional[bool]
+    language: Optional[Any]
+    nominations: Optional[Any]
+    ratings: Optional[Any]
+    recent_favourites: Optional[Any]
+    related_users: Optional[Any]
+    user: Optional[Any]
+
+@dataclass
+class Beatmapset(BeatmapsetCompact):
+    availability: Availability
     bpm: int
     can_be_hyped: bool
     discussion_enabled: bool
     discussion_locked: bool
+    hype: Hype
     is_scoreable: bool
     last_updated: datetime
-    legacy_thread_url: str
-    nominations_summary: dict[str, int]
-    ranked: int
-    ranked_date: datetime
+    legacy_thread_url: Optional[str]
+    nominations_summary: Nominations
+    ranked: RankStatus
+    ranked_date: Optional[datetime]
     storyboard: bool
-    submitted_date: datetime
+    submitted_date: Optional[datetime]
     tags: str
-    ratings: list[int]
-    beatmaps: Optional[Beatmap]
+    # undocumented
+    nsfw: bool
 
-
-
-@dataclass
-class BeatmapExtended(Beatmap):
-    """
-    attributes returned by https://osu.ppy.sh/docs/index.html#get-beatmap in
-    addition to a regular ``Beatmap``.
-    """
-    beatmapset: Beatmapset
-    failtimes: dict[str, list[int]]
-    max_combo: int
-
-@dataclass
-class Statistics:
-    count_50: int
-    count_100: int
-    count_300: int
-    count_geki: int
-    count_katu: int
-    count_miss: int
-
-@dataclass
-class Country:
-    code: str
-    name: str
-
-@dataclass
-class Cover:
-    custom_url: str
-    url: str
-    id: int
-
-@dataclass
-class UserCompact:
-    avatar_url: str
-    country_code: str
-    default_group: str
-    id: int
-    is_active: bool
-    is_bot: bool
-    is_deleted: bool
-    is_online: bool
-    is_supporter: bool
-    last_visit: bool
-    pm_friends_only: bool
-    profile_colour: str
-    username: str
-
-
-@dataclass
-class User(UserCompact):
-    cover_url: str
-    discord: Optional[str]
-    has_supported: bool
-    interests: Optional[str]
-    join_date: datetime
-    # TODO
-    kudosu: None
-    location: Optional[str]
-    max_blocks: int
-    max_friends: int
-    occupation: Optional[str]
-    playmode: str
-    playstyle: list[str]
-    post_count: int
-    profile_order: list[ProfilePage]
-    title: Optional[str]
-    twitter: Optional[str]
-    website: Optional[str]
-    country: Country
-    cover: Cover
-    is_admin: bool
-    is_bng: bool
-    is_full_bng: bool
-    is_gmt: bool
-    is_limited_bn: bool
-    is_moderator: bool
-    is_nat: bool
-    is_restricted: bool
-    is_silenced: bool
-    groups: list[str]
-
+# see the comment on BeatmapCompact.beatmapset for reasoning
+# pylint: disable=no-member
+BeatmapCompact.__annotations__["beatmapset"] = Optional[BeatmapsetCompact]
+Beatmap.__annotations__["beatmapset"] = Optional[Beatmapset]
+# pylint: enable=no-member
 
 @dataclass
 class Match:
@@ -197,7 +248,7 @@ class Score:
     rank_country: Optional[int]
     rank_global: Optional[int]
     weight: Optional[float]
-    user: Optional[User]
+    user: Optional[UserCompact]
     match: Optional[Match]
 
 @dataclass
@@ -313,7 +364,6 @@ class Search:
     user: Optional[SearchResult[UserCompact]]
     wiki_page: Optional[SearchResult[WikiPage]]
 
-
 @dataclass
 class BeatmapSearchResult:
     beatmapsets: list[Beatmapset]
@@ -321,17 +371,3 @@ class BeatmapSearchResult:
     recommended_difficulty: float
     error: Optional[str]
     total: int
-
-
-# the get replay endpoint
-# (https://osu.ppy.sh/docs/index.html#apiv2scoresmodescore) has some weird
-# return values, and since it's not documented we're just going to hackily work
-# around them for now.
-
-@dataclass
-class ReplayBeatmap(Beatmap):
-    max_combo: int
-
-@dataclass
-class ReplayScore(Score):
-    beatmap: ReplayBeatmap
